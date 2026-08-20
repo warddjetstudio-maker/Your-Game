@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Game</title>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --surface: #f7f7f7;
+      --text: #111111;
+      --text-secondary: #666666;
+      --text-muted: #999999;
+      --border: #e5e5e5;
+      --accent: #111111;
+      --accent-text: #ffffff;
+      --danger: #e11d48;
+      --radius: 12px;
+      --shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0a0a0a;
+        --surface: #141414;
+        --text: #f0f0f0;
+        --text-secondary: #a0a0a0;
+        --text-muted: #666666;
+        --border: #2a2a2a;
+        --accent: #f0f0f0;
+        --accent-text: #0a0a0a;
+      }
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    #app {
+      width: 100%;
+      max-width: 480px;
+      min-height: 700px;
+      position: relative;
+    }
+    .screen {
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+    .screen.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Auth */
+    .auth-header { text-align: center; margin-bottom: 36px; }
+    .auth-header h1 { font-size: 32px; font-weight: 600; letter-spacing: -0.5px; }
+    .auth-header p { color: var(--text-secondary); margin-top: 6px; font-size: 15px; }
+    .btn {
+      width: 100%;
+      padding: 13px 16px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 12px;
+      transition: all 0.15s ease;
+    }
+    .btn:hover { background: var(--border); }
+    .btn.primary {
+      background: var(--accent);
+      color: var(--accent-text);
+      border-color: transparent;
+    }
+    .btn.primary:hover { opacity: 0.9; }
+    .divider {
+      display: flex; align-items: center; gap: 12px;
+      margin: 18px 0; font-size: 12px; color: var(--text-muted);
+    }
+    .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+    .input {
+      width: 100%; padding: 13px 14px; border-radius: var(--radius);
+      border: 1px solid var(--border); font-size: 15px; margin-bottom: 12px;
+      background: var(--bg); color: var(--text); outline: none;
+    }
+    .input:focus { border-color: var(--text); }
+
+    /* Dashboard */
+    .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .topbar h2 { font-size: 22px; font-weight: 600; }
+    .topbar button { background: none; border: none; color: var(--text-secondary); cursor: pointer; font-size: 13px; }
+    .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+    .tab {
+      flex: 1; padding: 10px; text-align: center; border-radius: var(--radius);
+      font-size: 14px; font-weight: 500; cursor: pointer; border: 1px solid var(--border);
+      background: transparent; color: var(--text-secondary);
+    }
+    .tab.active { background: var(--accent); color: var(--accent-text); border-color: transparent; }
+    .game-list { max-height: 520px; overflow-y: auto; }
+    .game-card {
+      display: flex; align-items: center; gap: 14px; padding: 14px;
+      border-radius: var(--radius); border: 1px solid var(--border);
+      margin-bottom: 10px; cursor: pointer; transition: all 0.15s ease;
+    }
+    .game-card:hover { background: var(--surface); }
+    .game-thumb {
+      width: 50px; height: 50px; border-radius: 10px;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; flex-shrink: 0;
+    }
+    .game-info h3 { font-size: 15px; font-weight: 500; }
+    .game-info span { font-size: 12px; color: var(--text-muted); }
+    .fab {
+      position: fixed; bottom: 28px; right: 28px;
+      width: 56px; height: 56px; border-radius: 50%;
+      background: var(--accent); color: var(--accent-text);
+      border: none; font-size: 28px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: var(--shadow); transition: transform 0.15s ease;
+    }
+    .fab:hover { transform: scale(1.05); }
+
+    /* Publish */
+    .dropzone {
+      border: 2px dashed var(--border); border-radius: var(--radius);
+      padding: 36px; text-align: center; color: var(--text-secondary);
+      font-size: 14px; margin-bottom: 16px; cursor: pointer;
+      transition: border-color 0.15s ease;
+    }
+    .dropzone:hover { border-color: var(--text); }
+    .dropzone.dragover { border-color: var(--accent); background: var(--surface); }
+    textarea.input { min-height: 200px; font-family: 'SF Mono', monospace; font-size: 13px; resize: vertical; }
+
+    /* Player */
+    .player-wrap {
+      width: 100%; height: 400px; border-radius: var(--radius);
+      border: 1px solid var(--border); overflow: hidden; background: #000;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .player-wrap iframe { width: 100%; height: 100%; border: none; }
+    .empty-state { text-align: center; padding: 40px; color: var(--text-muted); }
+    .tag {
+      display: inline-block; padding: 3px 10px; border-radius: 20px;
+      font-size: 11px; font-weight: 500; margin-left: 8px;
+    }
+    .tag.html { background: #dbeafe; color: #1e40af; }
+    .tag.file { background: #dcfce7; color: #166534; }
+    @media (prefers-color-scheme: dark) {
+      .tag.html { background: #1e3a5f; color: #93c5fd; }
+      .tag.file { background: #14532d; color: #86efac; }
+    }
+  </style>
+<base target="_blank">
+</head>
+<body>
+
+<div id="app">
+  <!-- ==================== LOGIN ==================== -->
+  <div class="screen active" id="screen-login">
+    <div class="auth-header">
+      <h1>Your Game</h1>
+      <p>Joue et publie des jeux en un clic</p>
+    </div>
+    <button class="btn" onclick="signInGoogle()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+      </svg>
+      Continuer avec Google
+    </button>
+    <div class="divider">ou</div>
+    <input class="input" type="email" id="loginEmail" placeholder="Email" />
+    <input class="input" type="password" id="loginPassword" placeholder="Mot de passe" />
+    <button class="btn primary" onclick="signInEmail()">Se connecter</button>
+    <button class="btn" onclick="signUpEmail()">Créer un compte</button>
+    <p id="authError" style="color:var(--danger); font-size:13px; text-align:center; margin-top:8px;"></p>
+  </div>
+
+  <!-- ==================== DASHBOARD ==================== -->
+  <div class="screen" id="screen-dashboard">
+    <div class="topbar">
+      <h2>Bibliothèque</h2>
+      <button onclick="signOut()">Déconnexion</button>
+    </div>
+    <div class="tabs">
+      <div class="tab active" onclick="filterGames('all', this)">Tous</div>
+      <div class="tab" onclick="filterGames('mine', this)">Mes jeux</div>
+    </div>
+    <div class="game-list" id="gameList">
+      <div class="empty-state">Chargement...</div>
+    </div>
+    <button class="fab" onclick="showScreen('publish')">+</button>
+  </div>
+
+  <!-- ==================== PUBLISH ==================== -->
+  <div class="screen" id="screen-publish">
+    <div class="topbar">
+      <h2>Publier un jeu</h2>
+      <button onclick="showScreen('dashboard')">Annuler</button>
+    </div>
+    <input class="input" id="gameName" placeholder="Nom du jeu" />
+    <div class="tabs" style="margin-bottom:16px;">
+      <div class="tab active" onclick="switchPubMode('file', this)">Fichier</div>
+      <div class="tab" onclick="switchPubMode('code', this)">Code HTML</div>
+    </div>
+
+    <div id="pub-file">
+      <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
+        <div style="font-size:28px; margin-bottom:8px;">📁</div>
+        <div>Glisse un fichier ou clique pour parcourir</div>
+        <div style="font-size:12px; margin-top:6px; opacity:0.6;">.zip, .html, .js — max 50 Mo</div>
+      </div>
+      <input type="file" id="fileInput" style="display:none" accept=".zip,.html,.js" />
+      <p id="fileName" style="font-size:13px; color:var(--text-secondary); margin-bottom:12px;"></p>
+    </div>
+
+    <div id="pub-code" style="display:none;">
+      <textarea class="input" id="gameCode" placeholder="<!DOCTYPE html>
+<html>
+<body>
+  <canvas id='game'></canvas>
+  <script>
+    // Ton code ici
+  </script>
+</body>
+</html>"></textarea>
+    </div>
+
+    <button class="btn primary" onclick="publishGame()">Publier</button>
+    <p id="pubError" style="color:var(--danger); font-size:13px; text-align:center; margin-top:8px;"></p>
+  </div>
+
+  <!-- ==================== PLAYER ==================== -->
+  <div class="screen" id="screen-player">
+    <div class="topbar">
+      <h2 id="playerTitle">Jeu</h2>
+      <button onclick="showScreen('dashboard')">Quitter</button>
+    </div>
+    <div class="player-wrap" id="playerWrap">
+      <div class="empty-state">
+        <div style="font-size:40px; margin-bottom:12px;">🎮</div>
+        <div>Prêt à jouer</div>
+      </div>
+    </div>
+    <div style="margin-top:12px; display:flex; gap:8px;">
+      <button class="btn" style="flex:1;" onclick="launchGame()">▶ Lancer</button>
+      <button class="btn" style="flex:1; color:var(--danger);" onclick="deleteGame()">🗑 Supprimer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Firebase SDKs -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import {
+    getAuth, GoogleAuthProvider, signInWithPopup,
+    signInWithEmailAndPassword, createUserWithEmailAndPassword,
+    onAuthStateChanged, signOut as fbSignOut
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import {
+    getFirestore, collection, addDoc, getDocs,
+    query, where, orderBy, deleteDoc, doc
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import {
+    getStorage, ref, uploadBytes, getDownloadURL, deleteObject
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+
+  // ==================== TA CONFIG FIREBASE ====================
+  const firebaseConfig = {
+    apiKey: "AIzaSyBDqVjQ9s9xqyLJdajvv2G8Yb7xrFb10Jg",
+    authDomain: "your-game-6ea33.firebaseapp.com",
+    projectId: "your-game-6ea33",
+    storageBucket: "your-game-6ea33.firebasestorage.app",
+    messagingSenderId: "728370718814",
+    appId: "1:728370718814:web:98d39c2f5c9f89fd41eccf"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const storage = getStorage(app);
+
+  // ==================== NAVIGATION ====================
+  window.showScreen = (id) => {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('screen-' + id).classList.add('active');
+    if (id === 'dashboard') loadGames();
+  };
+
+  // ==================== AUTH ====================
+  window.signInGoogle = async () => {
+    const provider = new GoogleAuthProvider();
+    try { await signInWithPopup(auth, provider); }
+    catch (e) { document.getElementById('authError').textContent = e.message; }
+  };
+
+  window.signInEmail = async () => {
+    const email = document.getElementById('loginEmail').value;
+    const pass = document.getElementById('loginPassword').value;
+    try { await signInWithEmailAndPassword(auth, email, pass); }
+    catch (e) { document.getElementById('authError').textContent = e.message; }
+  };
+
+  window.signUpEmail = async () => {
+    const email = document.getElementById('loginEmail').value;
+    const pass = document.getElementById('loginPassword').value;
+    try { await createUserWithEmailAndPassword(auth, email, pass); }
+    catch (e) { document.getElementById('authError').textContent = e.message; }
+  };
+
+  window.signOut = async () => {
+    await fbSignOut(auth);
+    showScreen('login');
+  };
+
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      showScreen('dashboard');
+      loadGames();
+    } else {
+      showScreen('login');
+    }
+  });
+
+  // ==================== DASHBOARD ====================
+  let currentGames = [];
+  let currentFilter = 'all';
+  let selectedGame = null;
+
+  window.filterGames = (filter, el) => {
+    currentFilter = filter;
+    document.querySelectorAll('#screen-dashboard .tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    renderGames();
+  };
+
+  async function loadGames() {
+    const q = query(collection(db, 'games'), orderBy('createdAt', 'desc'));
+    const snap = await getDocs(q);
+    currentGames = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderGames();
+  }
+
+  function renderGames() {
+    const list = document.getElementById('gameList');
+    const user = auth.currentUser;
+    const games = currentFilter === 'mine'
+      ? currentGames.filter(g => g.authorId === user?.uid)
+      : currentGames;
+
+    if (games.length === 0) {
+      list.innerHTML = '<div class="empty-state">Aucun jeu pour le moment.<br>Publie le premier !</div>';
+      return;
+    }
+
+    list.innerHTML = games.map(g => `
+      <div class="game-card" onclick="openGame('${g.id}')">
+        <div class="game-thumb">${g.thumb || '🎮'}</div>
+        <div class="game-info">
+          <h3>${escapeHtml(g.name)} <span class="tag ${g.type}">${g.type === 'html' ? 'HTML' : 'Fichier'}</span></h3>
+          <span>Par ${escapeHtml(g.authorName || 'Anonyme')} • ${new Date(g.createdAt?.toDate?.() || g.createdAt).toLocaleDateString('fr-FR')}</span>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  window.openGame = (id) => {
+    selectedGame = currentGames.find(g => g.id === id);
+    if (!selectedGame) return;
+    document.getElementById('playerTitle').textContent = selectedGame.name;
+    document.getElementById('playerWrap').innerHTML = `
+      <div class="empty-state">
+        <div style="font-size:40px; margin-bottom:12px;">🎮</div>
+        <div>Clique sur "Lancer" pour jouer</div>
+      </div>
+    `;
+    showScreen('player');
+  };
+
+  window.launchGame = () => {
+    if (!selectedGame) return;
+    const wrap = document.getElementById('playerWrap');
+    if (selectedGame.type === 'html') {
+      wrap.innerHTML = `<iframe sandbox="allow-scripts" srcdoc="${escapeHtml(selectedGame.code)}"></iframe>`;
+    } else if (selectedGame.fileUrl) {
+      wrap.innerHTML = `<iframe sandbox="allow-scripts" src="${selectedGame.fileUrl}"></iframe>`;
+    }
+  };
+
+  window.deleteGame = async () => {
+    if (!selectedGame) return;
+    if (!confirm('Supprimer ce jeu ?')) return;
+    await deleteDoc(doc(db, 'games', selectedGame.id));
+    if (selectedGame.storagePath) {
+      await deleteObject(ref(storage, selectedGame.storagePath));
+    }
+    showScreen('dashboard');
+  };
+
+  // ==================== PUBLISH ====================
+  let pubMode = 'file';
+  let selectedFile = null;
+
+  window.switchPubMode = (mode, el) => {
+    pubMode = mode;
+    document.querySelectorAll('#screen-publish .tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('pub-file').style.display = mode === 'file' ? 'block' : 'none';
+    document.getElementById('pub-code').style.display = mode === 'code' ? 'block' : 'none';
+  };
+
+  const dropzone = document.getElementById('dropzone');
+  const fileInput = document.getElementById('fileInput');
+
+  dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('dragover'); });
+  dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+  dropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropzone.classList.remove('dragover');
+    if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+  });
+  fileInput.addEventListener('change', (e) => { if (e.target.files.length) handleFile(e.target.files[0]); });
+
+  function handleFile(file) {
+    selectedFile = file;
+    document.getElementById('fileName').textContent = `Sélectionné : ${file.name} (${(file.size/1024/1024).toFixed(2)} Mo)`;
+  }
+
+  window.publishGame = async () => {
+    const name = document.getElementById('gameName').value.trim();
+    const user = auth.currentUser;
+    if (!user) return;
+    if (!name) { document.getElementById('pubError').textContent = 'Donne un nom à ton jeu.'; return; }
+
+    let fileUrl = null;
+    let storagePath = null;
+    let code = null;
+    let type = pubMode;
+
+    try {
+      if (pubMode === 'file') {
+        if (!selectedFile) { document.getElementById('pubError').textContent = 'Sélectionne un fichier.'; return; }
+        storagePath = `games/${user.uid}/${Date.now()}_${selectedFile.name}`;
+        const sRef = ref(storage, storagePath);
+        await uploadBytes(sRef, selectedFile);
+        fileUrl = await getDownloadURL(sRef);
+      } else {
+        code = document.getElementById('gameCode').value.trim();
+        if (!code) { document.getElementById('pubError').textContent = 'Colle du code HTML.'; return; }
+      }
+
+      await addDoc(collection(db, 'games'), {
+        name, type, code, fileUrl, storagePath,
+        authorId: user.uid,
+        authorName: user.displayName || user.email,
+        thumb: '🎮',
+        createdAt: new Date()
+      });
+
+      document.getElementById('gameName').value = '';
+      document.getElementById('gameCode').value = '';
+      document.getElementById('fileName').textContent = '';
+      selectedFile = null;
+      showScreen('dashboard');
+    } catch (e) {
+      document.getElementById('pubError').textContent = e.message;
+    }
+  };
+
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+</script>
+
+</body>
+</html>
